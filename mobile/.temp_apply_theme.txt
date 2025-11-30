@@ -1,0 +1,6 @@
+Theme application summary:
+
+✅ PokerScreen - Theme applied successfully
+✅ Room screen - Needs theme application
+
+Next: Apply theme to Room screen carefully
