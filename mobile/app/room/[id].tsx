@@ -1,33 +1,28 @@
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  useColorScheme,
-  Alert,
-  Share,
-  Pressable,
-} from 'react-native';
-import { useLocalSearchParams, router } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { FadeInDown } from 'react-native-reanimated';
-import { Button } from '@/components/ui/button';
-import { useRoom } from '@/contexts/RoomContext';
-import { useAuth } from '@/contexts/AuthContext';
 import { PokerScreen } from '@/components/game/PokerScreen';
-import socketService from '@/services/socket';
 import { RoomSettingsModal } from '@/components/room/RoomSettingsModal';
-import { AnimatedBackground } from '@/components/game/AnimatedBackground';
+import { Button } from '@/components/ui/button';
 import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
 import { PlanningPokerLogo } from '@/components/ui/PlanningPokerLogo';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRoom } from '@/contexts/RoomContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import socketService from '@/services/socket';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import {
+    Alert,
+    ScrollView,
+    Share,
+    StyleSheet,
+    Text,
+    View
+} from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function RoomScreen() {
   const { currentTheme } = useTheme();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
   const { currentRoom, participants, joinRoomById, leaveRoom } = useRoom();
@@ -113,7 +108,6 @@ export default function RoomScreen() {
         style={styles.container}
       >
         <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <AnimatedBackground />
         <View style={styles.loadingContainer}>
           <PlanningPokerLogo size={100} animated={true} />
           <LoadingSkeleton width="80%" height={32} borderRadius={16} style={{ marginTop: 32, marginBottom: 16 }} />
@@ -141,7 +135,6 @@ export default function RoomScreen() {
       style={styles.container}
     >
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <AnimatedBackground />
 
       <ScrollView
         contentContainerStyle={styles.content}
@@ -154,7 +147,7 @@ export default function RoomScreen() {
           
           {/* Room Code Badge */}
           <LinearGradient
-            colors={['rgba(139, 92, 246, 0.2)', 'rgba(236, 72, 153, 0.2)']}
+            colors={currentTheme.colors.cardBg as any}
             style={styles.codeBadge}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -177,7 +170,7 @@ export default function RoomScreen() {
           <View style={styles.participantsList}>
             {participants.length === 0 ? (
               <LinearGradient
-                colors={['rgba(139, 92, 246, 0.05)', 'rgba(236, 72, 153, 0.05)']}
+                colors={currentTheme.colors.cardBg as any}
                 style={styles.emptyState}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
@@ -192,7 +185,7 @@ export default function RoomScreen() {
                   entering={FadeInDown.delay(300 + index * 50)}
                 >
                   <LinearGradient
-                    colors={['rgba(139, 92, 246, 0.1)', 'rgba(236, 72, 153, 0.1)']}
+                    colors={currentTheme.colors.cardBg as any}
                     style={styles.participantCard}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}

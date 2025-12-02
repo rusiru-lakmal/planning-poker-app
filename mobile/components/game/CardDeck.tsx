@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { AnimatedCard } from './AnimatedCard';
 
 interface CardDeckProps {
@@ -7,12 +7,13 @@ interface CardDeckProps {
   selectedValue?: string | null;
   onSelect: (value: string) => void;
   disabled?: boolean;
+  themeColors?: string[];
 }
 
 const FIBONACCI = ['0', '1', '2', '3', '5', '8', '13', '21', '34', '55', '89', '?'];
 const T_SHIRT = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '?'];
 
-export function CardDeck({ deckType, selectedValue, onSelect, disabled }: CardDeckProps) {
+export function CardDeck({ deckType, selectedValue, onSelect, disabled, themeColors }: CardDeckProps) {
   const cards = deckType === 't-shirt' ? T_SHIRT : FIBONACCI;
 
   return (
@@ -29,6 +30,7 @@ export function CardDeck({ deckType, selectedValue, onSelect, disabled }: CardDe
             selected={selectedValue === value} 
             onPress={() => !disabled && onSelect(value)}
             disabled={disabled}
+            themeColors={themeColors}
           />
         ))}
       </ScrollView>

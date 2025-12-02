@@ -1,33 +1,32 @@
+import { Input } from '@/components/ui/input';
+import { PlanningPokerLogo } from '@/components/ui/PlanningPokerLogo';
+import { Toast } from '@/components/ui/Toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Link, router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  useColorScheme,
-  Alert,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withSequence,
+    useAnimatedStyle,
+    useSharedValue,
+    withSequence,
+    withSpring,
 } from 'react-native-reanimated';
-import { Link, router } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { useAuth } from '@/contexts/AuthContext';
-import { Toast } from '@/components/ui/Toast';
-import { AnimatedBackground } from '@/components/game/AnimatedBackground';
 
 export default function SignupScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
   const { signup } = useAuth();
+  const { currentTheme } = useTheme();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -140,8 +139,13 @@ export default function SignupScreen() {
   }));
 
   return (
-    <SafeAreaView style={[styles.container, isDark && styles.containerDark]} edges={['top', 'left', 'right']}>
-      <AnimatedBackground />
+    <LinearGradient
+      colors={currentTheme.colors.background as any}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.container}
+    >
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
 
       <Toast 
         visible={toastVisible}
@@ -160,19 +164,19 @@ export default function SignupScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.content}>
-            <Animated.View style={[styles.card, animatedCardStyle]}>
+            <Animated.View style={[styles.card, animatedCardStyle, { shadowColor: currentTheme.colors.shadow }]}>
               <LinearGradient
-                colors={['rgba(139, 92, 246, 0.15)', 'rgba(236, 72, 153, 0.15)']}
-                style={styles.cardGradient}
+                colors={currentTheme.colors.cardBg as any}
+                style={[styles.cardGradient, { borderColor: 'rgba(255,255,255,0.1)' }]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
                 <View style={styles.header}>
-                  <Text style={styles.emoji}>✨</Text>
-                  <Text style={[styles.title, isDark && styles.textDark]}>
+                  <PlanningPokerLogo size={100} animated={true} />
+                  <Text style={[styles.title, styles.textLight]}>
                     Create Account
                   </Text>
-                  <Text style={[styles.subtitle, isDark && styles.textDark]}>
+                  <Text style={[styles.subtitle, { color: '#D1D5DB' }]}>
                     Join Planning Poker today
                   </Text>
                 </View>
@@ -189,6 +193,8 @@ export default function SignupScreen() {
                     error={errors.name}
                     autoCapitalize="words"
                     autoComplete="name"
+                    labelStyle={styles.inputLabel}
+                    containerStyle={{ marginBottom: 16 }}
                   />
 
                   <Input
@@ -203,6 +209,8 @@ export default function SignupScreen() {
                     keyboardType="email-address"
                     autoCapitalize="none"
                     autoComplete="email"
+                    labelStyle={styles.inputLabel}
+                    containerStyle={{ marginBottom: 16 }}
                   />
 
                   <Input
@@ -216,6 +224,8 @@ export default function SignupScreen() {
                     error={errors.password}
                     secureTextEntry
                     autoCapitalize="none"
+                    labelStyle={styles.inputLabel}
+                    containerStyle={{ marginBottom: 16 }}
                   />
 
                   <Input
@@ -229,21 +239,32 @@ export default function SignupScreen() {
                     error={errors.confirmPassword}
                     secureTextEntry
                     autoCapitalize="none"
+                    labelStyle={styles.inputLabel}
+                    containerStyle={{ marginBottom: 24 }}
                   />
 
-                  <Button
-                    title="Sign Up"
+                  <TouchableOpacity
                     onPress={handleSignup}
-                    loading={loading}
-                    style={styles.button}
-                  />
+                    disabled={loading}
+                  >
+                    <LinearGradient
+                      colors={currentTheme.colors.button as any}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.primaryButton}
+                    >
+                      <Text style={styles.primaryButtonText}>
+                        {loading ? 'Creating Account...' : 'Sign Up'}
+                      </Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
 
                   <View style={styles.footer}>
-                    <Text style={[styles.footerText, isDark && styles.textDark]}>
+                    <Text style={[styles.footerText, styles.textLight]}>
                       Already have an account?{' '}
                     </Text>
                     <Link href="/login" asChild>
-                      <Text style={styles.link}>Sign In</Text>
+                      <Text style={[styles.link, { color: currentTheme.colors.accent }]}>Sign In</Text>
                     </Link>
                   </View>
                 </View>
@@ -252,17 +273,17 @@ export default function SignupScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
   },
-  containerDark: {
-    backgroundColor: '#000000',
+  safeArea: {
+    flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
@@ -277,25 +298,18 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     overflow: 'hidden',
     elevation: 12,
-    shadowColor: '#8B5CF6',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.4,
     shadowRadius: 24,
   },
   cardGradient: {
     padding: 32,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 24,
   },
   header: {
     alignItems: 'center',
     marginBottom: 28,
-  },
-  emoji: {
-    fontSize: 64,
-    marginBottom: 16,
   },
   title: {
     fontSize: 32,
@@ -307,18 +321,22 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 18,
-    color: '#D1D5DB',
     textAlign: 'center',
     fontWeight: '500',
-  },
-  textDark: {
-    color: '#FFFFFF',
   },
   form: {
     width: '100%',
   },
-  button: {
-    marginTop: 8,
+  primaryButton: {
+    paddingVertical: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  primaryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
   },
   footer: {
     flexDirection: 'row',
@@ -331,7 +349,12 @@ const styles = StyleSheet.create({
   },
   link: {
     fontSize: 15,
-    color: '#EC4899',
     fontWeight: '700',
+  },
+  inputLabel: {
+    color: '#E2E8F0',
+  },
+  textLight: {
+    color: '#FFFFFF',
   },
 });

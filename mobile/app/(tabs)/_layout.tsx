@@ -1,15 +1,15 @@
-import React from 'react';
-import { Tabs } from 'expo-router';
-import { useColorScheme, Platform, View, StyleSheet } from 'react-native';
+import { useTheme } from '@/contexts/ThemeContext';
 import { BlurView } from 'expo-blur';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useTheme } from '@/contexts/ThemeContext';
+import { Tabs } from 'expo-router';
+import React from 'react';
+import { Platform, StyleSheet, useColorScheme, View } from 'react-native';
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
+} from 'react-native-reanimated';
 
 function TabBarIcon({ focused, icon, themeColors }: { focused: boolean; icon: string; themeColors: string[] }) {
   const scale = useSharedValue(focused ? 1 : 0.9);
@@ -29,7 +29,7 @@ function TabBarIcon({ focused, icon, themeColors }: { focused: boolean; icon: st
     <Animated.View style={[styles.iconContainer, animatedStyle]}>
       {focused ? (
         <LinearGradient
-          colors={themeColors}
+          colors={themeColors as any}
           style={styles.iconGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -81,8 +81,8 @@ export default function TabLayout() {
             />
             <LinearGradient
               colors={[
-                `${currentTheme.colors.primary}26`,
-                `${currentTheme.colors.secondary}26`,
+                `${currentTheme.colors.button[0]}26`,
+                `${currentTheme.colors.button[1]}26`,
               ]}
               style={StyleSheet.absoluteFill}
               start={{ x: 0, y: 0 }}
@@ -91,7 +91,7 @@ export default function TabLayout() {
             {/* Border gradient */}
             <View style={styles.borderContainer}>
               <LinearGradient
-                colors={[`${currentTheme.colors.primary}66`, `${currentTheme.colors.secondary}66`]}
+                colors={[`${currentTheme.colors.button[0]}66`, `${currentTheme.colors.button[1]}66`]}
                 style={styles.border}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
@@ -111,7 +111,7 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ focused }) => (
-            <TabBarIcon focused={focused} icon="🏠" themeColors={[currentTheme.colors.primary, currentTheme.colors.secondary]} />
+            <TabBarIcon focused={focused} icon="🏠" themeColors={currentTheme.colors.button} />
           ),
         }}
         listeners={{
@@ -123,7 +123,7 @@ export default function TabLayout() {
         options={{
           title: 'Explore',
           tabBarIcon: ({ focused }) => (
-            <TabBarIcon focused={focused} icon="🔍" themeColors={[currentTheme.colors.primary, currentTheme.colors.secondary]} />
+            <TabBarIcon focused={focused} icon="🔍" themeColors={currentTheme.colors.button} />
           ),
         }}
         listeners={{
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 25,
     overflow: 'hidden',
-    backgroundColor: 'rgba(15, 23, 42, 0.8)',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
     shadowColor: '#8B5CF6',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.3,

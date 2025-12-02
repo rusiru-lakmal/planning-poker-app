@@ -1,23 +1,21 @@
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import socketService from '@/services/socket';
+import { Participant, Room } from '@/types/api';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, useColorScheme } from 'react-native';
-import { Room, Participant } from '@/types/api';
+import { StyleSheet, Text, View } from 'react-native';
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue,
+    withSequence,
+    withSpring,
+    withTiming,
+} from 'react-native-reanimated';
 import { CardDeck } from './CardDeck';
 import { ResultsChart } from './ResultsChart';
 import { Timer } from './Timer';
-import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/AuthContext';
-import socketService from '@/services/socket';
-import { AnimatedBackground } from './AnimatedBackground';
-import { LinearGradient } from 'expo-linear-gradient';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withSequence,
-  withTiming,
-} from 'react-native-reanimated';
-import { Gradients } from '@/constants/theme';
-import { useTheme } from '@/contexts/ThemeContext';
 
 interface PokerScreenProps {
   room: Room;
@@ -27,14 +25,11 @@ interface PokerScreenProps {
 export function PokerScreen({ room, participants }: PokerScreenProps) {
   const { user } = useAuth();
   const { currentTheme } = useTheme();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
   const isHost = room.hostUserId === user?.id;
 
   const currentUserParticipant = participants.find(p => p.userId === user?.id);
   const isSpectator = currentUserParticipant?.role === 'spectator' || currentUserParticipant?.role === 'observer';
   const currentVote = currentUserParticipant?.vote;
-  const hasVoted = !!currentVote;
 
   const handleVote = (vote: string) => {
     if (user?.id) {
@@ -83,12 +78,12 @@ export function PokerScreen({ room, participants }: PokerScreenProps) {
         {/* Story Card Header */}
         <View style={styles.storyCard}>
           <LinearGradient
-            colors={['rgba(139, 92, 246, 0.2)', 'rgba(236, 72, 153, 0.2)']}
+            colors={currentTheme.colors.cardBg as any}
             style={styles.storyCardGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            <Text style={[styles.storyTitle, isDark && styles.textDark]}>
+            <Text style={styles.storyTitle}>
               {room.gameState === 'REVEALED' ? '✨ Voting Finished' : 
                room.gameState === 'LOBBY' ? '🎯 Waiting to Start' : '⏳ Voting in Progress'}
             </Text>
@@ -111,7 +106,7 @@ export function PokerScreen({ room, participants }: PokerScreenProps) {
                 key={p.userId} 
                 participant={p} 
                 revealed={room.gameState === 'REVEALED'}
-                isDark={isDark}
+                currentTheme={currentTheme}
               />
             ))}
           </View>
@@ -122,7 +117,7 @@ export function PokerScreen({ room, participants }: PokerScreenProps) {
       <View style={styles.controls}>
         {room.gameState === 'REVEALED' ? (
           <View style={styles.resultsArea}>
-            <Text style={[styles.resultTitle, isDark && styles.textDark]}>
+            <Text style={styles.resultTitle}>
               📊 Results
             </Text>
             <ResultsChart participants={participants} deckType={room.deckType} />
@@ -137,10 +132,11 @@ export function PokerScreen({ room, participants }: PokerScreenProps) {
                 deckType={room.deckType} 
                 selectedValue={currentVote}
                 onSelect={handleVote}
+                themeColors={currentTheme.colors.button as any}
               />
             ) : (
               <View style={styles.spectatorMessage}>
-                <Text style={[styles.spectatorText, isDark && styles.textDark]}>
+                <Text style={styles.spectatorText}>
                   👀 You are spectating
                 </Text>
               </View>
@@ -180,14 +176,7 @@ export function PokerScreen({ room, participants }: PokerScreenProps) {
   );
 }
 
-const PARTICIPANT_COLORS = [
-  Gradients.orb.purple,
-  Gradients.orb.pink,
-  Gradients.orb.indigo,
-  Gradients.orb.blue,
-];
-
-function ParticipantBadge({ participant, revealed, isDark }: { participant: Participant, revealed: boolean, isDark: boolean }) {
+function ParticipantBadge({ participant, revealed, currentTheme }: { participant: Participant, revealed: boolean, currentTheme: any }) {
   const hasVoted = !!participant.vote;
   const scale = useSharedValue(1);
   const rotation = useSharedValue(0);
@@ -213,18 +202,15 @@ function ParticipantBadge({ participant, revealed, isDark }: { participant: Part
     transform: [
       { scale: scale.value },
       { rotateY: `${rotation.value}deg` },
+      { scaleX: revealed && hasVoted ? -1 : 1 }, // Fix mirror bug
     ],
   }));
-
-  // Assign a consistent color based on participant index/ID
-  const colorIndex = participant.userId.charCodeAt(0) % PARTICIPANT_COLORS.length;
-  const gradientColors = PARTICIPANT_COLORS[colorIndex];
 
   return (
     <View style={styles.badge}>
       <Animated.View style={[styles.cardBackContainer, animatedStyle]}>
         <LinearGradient
-          colors={hasVoted ? (revealed ? ['#FFFFFF', '#F3F4F6'] : gradientColors) : ['#E5E7EB', '#D1D5DB']}
+          colors={hasVoted ? (revealed ? ['#FFFFFF', '#F3F4F6'] : (currentTheme.colors.button as any)) : ['#E5E7EB', '#D1D5DB']}
           style={[
             styles.cardBack,
             hasVoted && !revealed && styles.cardBackVoted,
@@ -242,7 +228,7 @@ function ParticipantBadge({ participant, revealed, isDark }: { participant: Part
           </Text>
         </LinearGradient>
       </Animated.View>
-      <Text style={[styles.badgeName, isDark && styles.textDark]}>
+      <Text style={styles.badgeName}>
         {participant.name.length > 10 ? participant.name.substring(0, 10) + '...' : participant.name}
       </Text>
     </View>

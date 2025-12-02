@@ -1,26 +1,26 @@
+import { Gradients } from '@/constants/theme';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect } from 'react';
-import { StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { Platform, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import Animated, {
-  useSharedValue,
+  Extrapolate,
+  interpolate,
   useAnimatedStyle,
+  useSharedValue,
   withSpring,
   withTiming,
-  interpolate,
-  Extrapolate,
 } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
-import { Text } from 'react-native';
-import { Gradients } from '@/constants/theme';
 
 interface AnimatedCardProps {
   value: string;
   selected: boolean;
   onPress: () => void;
   disabled?: boolean;
+  themeColors?: string[];
 }
 
-export function AnimatedCard({ value, selected, onPress, disabled }: AnimatedCardProps) {
+export function AnimatedCard({ value, selected, onPress, disabled, themeColors }: AnimatedCardProps) {
   const scale = useSharedValue(1);
   const rotateX = useSharedValue(0);
   const rotateY = useSharedValue(0);
@@ -79,7 +79,7 @@ export function AnimatedCard({ value, selected, onPress, disabled }: AnimatedCar
   const gradientColors = isMystery 
     ? Gradients.Card.mystery 
     : selected 
-    ? Gradients.Card.selected 
+    ? (themeColors || Gradients.Card.selected)
     : Gradients.Card.default;
 
   return (
@@ -92,7 +92,7 @@ export function AnimatedCard({ value, selected, onPress, disabled }: AnimatedCar
     >
       <Animated.View style={[styles.cardContainer, animatedStyle]}>
         <LinearGradient
-          colors={gradientColors}
+          colors={gradientColors as any}
           style={styles.card}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
