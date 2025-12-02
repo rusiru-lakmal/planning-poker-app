@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Modal, Switch, TextInput, useColorScheme, Pressable, ScrollView } from 'react-native';
-import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import { Button } from '@/components/ui/button';
+import { useTheme } from '@/contexts/ThemeContext';
 import roomsAPI from '@/services/rooms.api';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useState } from 'react';
+import { Modal, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 interface RoomSettingsModalProps {
   visible: boolean;
@@ -25,8 +26,7 @@ export const RoomSettingsModal: React.FC<RoomSettingsModalProps> = ({
   initialSettings,
   roomId,
 }) => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { currentTheme } = useTheme();
   const [settings, setSettings] = useState(initialSettings);
 
   React.useEffect(() => {
@@ -64,7 +64,7 @@ export const RoomSettingsModal: React.FC<RoomSettingsModalProps> = ({
   const SettingRow = ({ icon, label, description, children }: any) => (
     <Animated.View entering={FadeInDown} style={styles.settingRow}>
       <LinearGradient
-        colors={['rgba(139, 92, 246, 0.05)', 'rgba(236, 72, 153, 0.05)']}
+        colors={currentTheme.colors.cardBg as any}
         style={styles.settingGradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -101,7 +101,7 @@ export const RoomSettingsModal: React.FC<RoomSettingsModalProps> = ({
             bounces={false}
           >
             <LinearGradient
-              colors={['rgba(139, 92, 246, 0.15)', 'rgba(236, 72, 153, 0.15)']}
+              colors={currentTheme.colors.cardBg as any}
               style={styles.contentGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -129,8 +129,8 @@ export const RoomSettingsModal: React.FC<RoomSettingsModalProps> = ({
                       }
                       setSettings(newSettings);
                     }}
-                    trackColor={{ false: '#767577', true: '#EC4899' }}
-                    thumbColor={settings.autoReveal ? '#8B5CF6' : '#f4f3f4'}
+                    trackColor={{ false: '#767577', true: currentTheme.colors.accent }}
+                    thumbColor={settings.autoReveal ? currentTheme.colors.button[0] : '#f4f3f4'}
                   />
                 </SettingRow>
 
@@ -142,8 +142,8 @@ export const RoomSettingsModal: React.FC<RoomSettingsModalProps> = ({
                   <Switch
                     value={settings.allowSpectators !== false}
                     onValueChange={(val) => setSettings({ ...settings, allowSpectators: val })}
-                    trackColor={{ false: '#767577', true: '#EC4899' }}
-                    thumbColor={settings.allowSpectators !== false ? '#8B5CF6' : '#f4f3f4'}
+                    trackColor={{ false: '#767577', true: currentTheme.colors.accent }}
+                    thumbColor={settings.allowSpectators !== false ? currentTheme.colors.button[0] : '#f4f3f4'}
                   />
                 </SettingRow>
 
@@ -153,7 +153,13 @@ export const RoomSettingsModal: React.FC<RoomSettingsModalProps> = ({
                   description="Set to 0 to disable timer"
                 >
                   <TextInput
-                    style={styles.input}
+                    style={[
+                      styles.input,
+                      {
+                        borderColor: currentTheme.colors.accent,
+                        backgroundColor: `${currentTheme.colors.button[0]}1A`,
+                      }
+                    ]}
                     keyboardType="numeric"
                     value={(settings.timerDuration || 0).toString()}
                     onChangeText={(text) => setSettings({ ...settings, timerDuration: parseInt(text) || 0 })}
@@ -255,7 +261,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(139, 92, 246, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -279,7 +285,6 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1.5,
-    borderColor: '#8B5CF6',
     borderRadius: 12,
     padding: 12,
     width: 80,
@@ -287,7 +292,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#FFFFFF',
-    backgroundColor: 'rgba(139, 92, 246, 0.1)',
   },
   actions: {
     flexDirection: 'row',
