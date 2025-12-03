@@ -1,12 +1,18 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { DeviceEventEmitter } from 'react-native';
-import { User, LoginDto, SignupDto } from '@/types/api';
-import authAPI from '@/services/auth.api';
-import { removeToken } from '@/services/api';
-import socketService from '@/services/socket';
+import { User as ApiUser, LoginDto, SignupDto } from '@/types/api';
+import { auth, db } from '@/services/firebaseConfig';
+import { doc, setDoc } from 'firebase/firestore';
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged,
+  updateProfile,
+  User as FirebaseUser
+} from 'firebase/auth';
 
 interface AuthContextType {
-  user: User | null;
+  user: ApiUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (loginDto: LoginDto) => Promise<void>;
@@ -30,33 +36,42 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<ApiUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check for existing token on mount
   useEffect(() => {
-    // Disabled auto-login - user must login manually each time
-    // Clear any stored token to ensure clean slate
-    removeToken().catch(() => {});
-    setIsLoading(false);
-
-    // Listen for auth errors (401) from API interceptor
-    const subscription = DeviceEventEmitter.addListener('auth_error', () => {
-      logout();
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        setUser({
+          id: firebaseUser.uid,
+          email: firebaseUser.email || '',
+          name: firebaseUser.displayName || 'User',
+        });
+      } else {
+        setUser(null);
+      }
+      setIsLoading(false);
     });
 
-    return () => {
-      subscription.remove();
-    };
+    return () => unsubscribe();
   }, []);
 
   const login = async (loginDto: LoginDto): Promise<void> => {
     try {
-      const response = await authAPI.login(loginDto);
-      setUser(response.user);
-
-      // Connect socket with auth token
-      socketService.connect(response.accessToken);
+      const userCredential = await signInWithEmailAndPassword(auth, loginDto.email, loginDto.password);
+      
+      // Update user document in Firestore (e.g. last login)
+      if (userCredential.user) {
+        const userRef = doc(db, 'users', userCredential.user.uid);
+        const name = userCredential.user.displayName || 'User';
+        await setDoc(userRef, {
+          email: userCredential.user.email,
+          name: name,
+          nameLower: name.toLowerCase(),
+          searchKeywords: generateSearchKeywords(name),
+          lastLogin: new Date().toISOString()
+        }, { merge: true });
+      }
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -64,22 +79,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const googleLogin = async (token: string): Promise<void> => {
-    try {
-      const response = await authAPI.googleLogin(token);
-      setUser(response.user);
-
-      // Connect socket with auth token
-      socketService.connect(response.accessToken);
-    } catch (error) {
-      console.error('Google Login error:', error);
-      throw error;
-    }
+    // TODO: Implement Google Sign-In with Firebase
+    console.warn('Google Login not yet implemented for Firebase');
   };
 
   const signup = async (signupDto: SignupDto): Promise<void> => {
     try {
-      await authAPI.signup(signupDto);
-      // Don't set user or connect socket - require manual login
+      const userCredential = await createUserWithEmailAndPassword(
+        auth, 
+        signupDto.email, 
+        signupDto.password
+      );
+      
+      if (userCredential.user) {
+        await updateProfile(userCredential.user, {
+          displayName: signupDto.name
+        });
+        
+        // Create user document in Firestore
+        const userRef = doc(db, 'users', userCredential.user.uid);
+        await setDoc(userRef, {
+          id: userCredential.user.uid,
+          email: userCredential.user.email,
+          name: signupDto.name,
+          nameLower: signupDto.name.toLowerCase(),
+          createdAt: new Date().toISOString(),
+          searchKeywords: generateSearchKeywords(signupDto.name)
+        });
+        
+        // Force update local state since onAuthStateChanged might fire before updateProfile
+        setUser({
+          id: userCredential.user.uid,
+          email: userCredential.user.email || '',
+          name: signupDto.name,
+        });
+      }
     } catch (error) {
       console.error('Signup error:', error);
       throw error;
@@ -88,16 +122,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async () => {
     try {
-      await authAPI.logout();
-      setUser(null);
-      
-      // Disconnect socket on logout
-      socketService.disconnect();
+      await signOut(auth);
     } catch (error) {
       console.error('Logout error:', error);
-      // Even if API call fails, clear local state
-      setUser(null);
-      socketService.disconnect();
     }
   };
 
@@ -112,4 +139,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+// Helper to generate search keywords for Firestore
+const generateSearchKeywords = (name: string): string[] => {
+  const keywords: string[] = [];
+  const lowerName = name.toLowerCase();
+  let current = '';
+  for (const char of lowerName) {
+    current += char;
+    keywords.push(current);
+  }
+  return keywords;
 };

@@ -9,18 +9,29 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { RoomProvider } from '@/contexts/RoomContext';
 import { ThemeProvider as DynamicThemeProvider } from '@/contexts/ThemeContext';
+import { NotificationProvider } from '@/contexts/NotificationContext';
 
 function RootNavigator() {
   const { isAuthenticated, isLoading } = useAuth();
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated && pathname === '/') {
-      router.replace('/login');
+    console.log('[RootNavigator] Auth state:', { isLoading, isAuthenticated, pathname });
+    
+    if (isLoading) {
+      return; // Wait for auth to load
     }
     
-    // Redirect authenticated users to tabs if they're on auth screens
-    if (!isLoading && isAuthenticated && (pathname === '/login' || pathname === '/signup' || pathname === '/')) {
+    // Redirect to login if not authenticated
+    if (!isAuthenticated && pathname !== '/login' && pathname !== '/signup') {
+      console.log('[RootNavigator] Not authenticated, redirecting to login');
+      router.replace('/login');
+      return;
+    }
+    
+    // Redirect authenticated users away from auth screens
+    if (isAuthenticated && (pathname === '/login' || pathname === '/signup' || pathname === '/')) {
+      console.log('[RootNavigator] Authenticated, redirecting to tabs');
       router.replace('/(tabs)');
     }
   }, [isLoading, isAuthenticated, pathname]);
@@ -48,10 +59,12 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <DynamicThemeProvider>
           <AuthProvider>
-            <RoomProvider>
-              <RootNavigator />
-              <StatusBar style="auto" />
-            </RoomProvider>
+            <NotificationProvider>
+              <RoomProvider>
+                <RootNavigator />
+                <StatusBar style="auto" />
+              </RoomProvider>
+            </NotificationProvider>
           </AuthProvider>
         </DynamicThemeProvider>
       </SafeAreaProvider>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, useColorScheme } from 'react-native';
+import { View, Text, StyleSheet, Pressable, useColorScheme, Alert, TouchableOpacity } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -9,14 +9,17 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Room } from '@/contexts/RoomContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface RoomCardProps {
   room: Room;
   onPress: () => void;
+  onDelete?: (roomId: string) => void;
 }
 
-export function RoomCard({ room, onPress }: RoomCardProps) {
+export function RoomCard({ room, onPress, onDelete }: RoomCardProps) {
   const { currentTheme } = useTheme();
+  const { user } = useAuth();
   const scale = useSharedValue(1);
   const elevation = useSharedValue(8);
 
@@ -53,6 +56,21 @@ export function RoomCard({ room, onPress }: RoomCardProps) {
 
   const status = getStatusInfo();
 
+  const handleDelete = () => {
+    Alert.alert(
+      "Delete Room",
+      "Are you sure you want to delete this room? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Delete", 
+          style: "destructive",
+          onPress: () => onDelete && onDelete(room.id)
+        }
+      ]
+    );
+  };
+
   return (
     <Pressable
       onPress={onPress}
@@ -71,11 +89,25 @@ export function RoomCard({ room, onPress }: RoomCardProps) {
             <Text style={styles.roomName} numberOfLines={1}>
               {room.name}
             </Text>
-            <View style={[styles.statusBadge, { backgroundColor: status.color + '20' }]}>
-              <Text style={styles.statusEmoji}>{status.emoji}</Text>
-              <Text style={[styles.statusText, { color: status.color }]}>
-                {status.label}
-              </Text>
+            
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={[styles.statusBadge, { backgroundColor: status.color + '20' }]}>
+                <Text style={styles.statusEmoji}>{status.emoji}</Text>
+                <Text style={[styles.statusText, { color: status.color }]}>
+                  {status.label}
+                </Text>
+              </View>
+              
+              {/* Delete Button - Only for owner */}
+              {user && room.hostUserId === user.id && onDelete && (
+                <TouchableOpacity 
+                  onPress={handleDelete}
+                  style={styles.deleteButton}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Text style={styles.deleteIcon}>🗑️</Text>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
 
@@ -277,5 +309,15 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
     color: '#FFFFFF',
+  },
+  deleteButton: {
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+  },
+  deleteIcon: {
+    fontSize: 14,
   },
 });

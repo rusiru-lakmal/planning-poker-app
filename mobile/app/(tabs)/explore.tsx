@@ -6,16 +6,32 @@ import {
   ScrollView,
   TextInput,
   Pressable,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
 
 export default function ExploreScreen() {
   const { currentTheme } = useTheme();
+  const { logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
+
+  const handleLogout = async () => {
+    try {
+      console.log('[Explore] Logout button clicked');
+      await logout();
+      console.log('[Explore] Logout successful');
+      // Navigation will be handled by _layout.tsx
+    } catch (error) {
+      console.error('[Explore] Logout error:', error);
+      Alert.alert('Error', 'Failed to logout. Please try again.');
+    }
+  };
 
   const categories = [
     { id: '1', name: 'Sprint Planning', icon: '🏃‍♂️', count: 12 },
@@ -99,6 +115,16 @@ export default function ExploreScreen() {
             emoji="🚧"
             title="Public Rooms Coming Soon"
             subtitle="Discover and join public planning poker rooms from the community"
+          />
+        </Animated.View>
+        
+        {/* Logout Button */}
+        <Animated.View entering={FadeInDown.delay(700)} style={styles.logoutSection}>
+          <Button 
+            title="🚪 Logout" 
+            onPress={handleLogout}
+            variant="outline"
+            style={styles.logoutButton}
           />
         </Animated.View>
       </ScrollView>
@@ -195,5 +221,19 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#9CA3AF',
     fontWeight: '600',
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#9CA3AF',
+    fontSize: 16,
+    marginTop: 24,
+  },
+  logoutSection: {
+    marginTop: 32,
+    marginBottom: 100, // Extra space for bottom navigation
+  },
+  logoutButton: {
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderColor: '#EF4444',
   },
 });

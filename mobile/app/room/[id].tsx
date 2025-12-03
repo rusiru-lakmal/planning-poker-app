@@ -6,7 +6,6 @@ import { PlanningPokerLogo } from '@/components/ui/PlanningPokerLogo';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRoom } from '@/contexts/RoomContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import socketService from '@/services/socket';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -21,17 +20,20 @@ import {
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { InviteUsersModal } from '@/components/room/InviteUsersModal';
+
 export default function RoomScreen() {
   const { currentTheme } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
-  const { currentRoom, participants, joinRoomById, leaveRoom } = useRoom();
+  const { currentRoom, participants, joinRoomById, leaveRoom, updateSettings, startVoting } = useRoom();
   const [loading, setLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
 
   const handleUpdateSettings = (settings: any) => {
     if (currentRoom?.id) {
-      socketService.updateSettings(currentRoom.id, settings);
+      updateSettings(settings);
     }
   };
 
@@ -87,8 +89,8 @@ export default function RoomScreen() {
     if (currentRoom?.id) {
       console.log('[RoomScreen] Starting voting for room:', currentRoom.id);
       try {
-        socketService.startVoting(currentRoom.id);
-        console.log('[RoomScreen] socketService.startVoting called');
+        startVoting();
+        console.log('[RoomScreen] startVoting called');
       } catch (error) {
         console.error('[RoomScreen] Error calling startVoting:', error);
       }
@@ -234,6 +236,12 @@ export default function RoomScreen() {
                 variant="outline"
                 style={styles.outlineButton}
               />
+              <Button
+                title="👋 Invite Users"
+                onPress={() => setShowInviteModal(true)}
+                variant="outline"
+                style={styles.outlineButton}
+              />
             </>
           )}
           <Button
@@ -253,13 +261,21 @@ export default function RoomScreen() {
 
       {/* Settings Modal */}
       {isHost && (
-        <RoomSettingsModal
-          visible={showSettings}
-          onClose={() => setShowSettings(false)}
-          onSave={handleUpdateSettings}
-          initialSettings={currentRoom.settings}
-          roomId={currentRoom.id}
-        />
+        <>
+          <RoomSettingsModal
+            visible={showSettings}
+            onClose={() => setShowSettings(false)}
+            onSave={handleUpdateSettings}
+            initialSettings={currentRoom.settings}
+            roomId={currentRoom.id}
+          />
+          <InviteUsersModal
+            visible={showInviteModal}
+            onClose={() => setShowInviteModal(false)}
+            roomId={currentRoom.id}
+            roomName={currentRoom.name}
+          />
+        </>
       )}
       </SafeAreaView>
     </LinearGradient>

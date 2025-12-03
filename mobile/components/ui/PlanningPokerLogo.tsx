@@ -1,14 +1,13 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
-import Svg, { Path, Circle, LinearGradient as SvgLinearGradient, Defs, Stop } from 'react-native-svg';
+import { StyleSheet } from 'react-native';
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withSpring,
-  withSequence,
-  Easing,
+    useAnimatedStyle,
+    useSharedValue,
+    withRepeat,
+    withSequence,
+    withSpring
 } from 'react-native-reanimated';
+import Svg, { Circle, Defs, Path, Rect, Stop, LinearGradient as SvgLinearGradient, Text as SvgText } from 'react-native-svg';
 
 interface LogoProps {
   size?: number;
@@ -41,62 +40,100 @@ export function PlanningPokerLogo({ size = 120, animated = true }: LogoProps) {
 
   return (
     <Animated.View style={[styles.container, animatedStyle, { width: size, height: size }]}>
-      <Svg width={size} height={size} viewBox="0 0 120 120">
+      <Svg width={size} height={size} viewBox="0 0 200 200">
         <Defs>
+          {/* Card gradient - blue theme */}
           <SvgLinearGradient id="cardGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <Stop offset="0%" stopColor="#8B5CF6" stopOpacity="1" />
-            <Stop offset="100%" stopColor="#EC4899" stopOpacity="1" />
+            <Stop offset="0%" stopColor="#3b82f6" stopOpacity="1" />
+            <Stop offset="100%" stopColor="#1e40af" stopOpacity="1" />
           </SvgLinearGradient>
-          <SvgLinearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <Stop offset="0%" stopColor="#1E1B4B" stopOpacity="1" />
-            <Stop offset="100%" stopColor="#312E81" stopOpacity="1" />
+          {/* Accent gradient - green theme */}
+          <SvgLinearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <Stop offset="0%" stopColor="#10b981" stopOpacity="1" />
+            <Stop offset="100%" stopColor="#059669" stopOpacity="1" />
           </SvgLinearGradient>
         </Defs>
 
         {/* Background Circle */}
-        <Circle cx="60" cy="60" r="58" fill="url(#bgGradient)" />
+        <Circle cx="100" cy="100" r="95" fill="#1e40af" opacity="0.1" />
 
-        {/* Card 1 - "1" */}
-        <Path
-          d="M 35 45 L 50 40 L 50 70 L 35 75 Z"
+        {/* Left card (rotated -15 degrees) */}
+        <Rect
+          x="45"
+          y="60"
+          width="50"
+          height="70"
+          rx="6"
           fill="url(#cardGradient)"
-          opacity="0.9"
+          opacity="0.7"
+          transform="rotate(-15 70 95)"
         />
 
-        {/* Card 2 - "2" */}
-        <Path
-          d="M 42 42 L 57 38 L 57 68 L 42 72 Z"
+        {/* Right card (rotated 15 degrees) */}
+        <Rect
+          x="105"
+          y="60"
+          width="50"
+          height="70"
+          rx="6"
           fill="url(#cardGradient)"
-          opacity="0.95"
+          opacity="0.7"
+          transform="rotate(15 130 95)"
         />
 
-        {/* Card 3 - "3" (center, brightest) */}
-        <Path
-          d="M 50 40 L 65 38 L 65 68 L 50 70 Z"
+        {/* Center card (front, no rotation) */}
+        <Rect
+          x="75"
+          y="55"
+          width="50"
+          height="70"
+          rx="6"
           fill="url(#cardGradient)"
-          opacity="1"
         />
 
-        {/* Card 4 - "5" */}
-        <Path
-          d="M 58 42 L 73 40 L 73 70 L 58 72 Z"
-          fill="url(#cardGradient)"
-          opacity="0.95"
-        />
+        {/* Center card number "8" */}
+        <SvgText
+          x="100"
+          y="100"
+          fontSize="36"
+          fontWeight="bold"
+          fill="#FFFFFF"
+          textAnchor="middle"
+          dominantBaseline="middle"
+        >
+          8
+        </SvgText>
 
-        {/* Card 5 - "8" */}
-        <Path
-          d="M 65 45 L 80 42 L 80 72 L 65 75 Z"
-          fill="url(#cardGradient)"
-          opacity="0.9"
-        />
+        {/* Small corner numbers */}
+        <SvgText
+          x="82"
+          y="67"
+          fontSize="12"
+          fontWeight="bold"
+          fill="#FFFFFF"
+        >
+          8
+        </SvgText>
+        <SvgText
+          x="118"
+          y="118"
+          fontSize="12"
+          fontWeight="bold"
+          fill="#FFFFFF"
+        >
+          8
+        </SvgText>
 
-        {/* Number indicators (optional decorative elements) */}
-        <Circle cx="42" cy="55" r="2" fill="#FFFFFF" opacity="0.8" />
-        <Circle cx="50" cy="53" r="2" fill="#FFFFFF" opacity="0.9" />
-        <Circle cx="58" cy="53" r="2.5" fill="#FFFFFF" opacity="1" />
-        <Circle cx="66" cy="55" r="2" fill="#FFFFFF" opacity="0.9" />
-        <Circle cx="73"cy="57" r="2" fill="#FFFFFF" opacity="0.8" />
+        {/* Checkmark accent badge */}
+        <Circle cx="138" cy="68" r="18" fill="url(#accentGradient)" />
+        <Path
+          d="M 132 67 L 136 72 L 145 62"
+          stroke="#FFFFFF"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          fill="none"
+        />
       </Svg>
     </Animated.View>
   );

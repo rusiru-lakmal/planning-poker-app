@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import socketService from '@/services/socket';
+import { useRoom } from '@/contexts/RoomContext';
 import { Participant, Room } from '@/types/api';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect } from 'react';
@@ -14,8 +14,8 @@ import Animated, {
     withTiming,
 } from 'react-native-reanimated';
 import { CardDeck } from './CardDeck';
-import { ResultsChart } from './ResultsChart';
 import { Timer } from './Timer';
+import { ResultsScreen } from './ResultsScreen';
 
 interface PokerScreenProps {
   room: Room;
@@ -25,6 +25,14 @@ interface PokerScreenProps {
 export function PokerScreen({ room, participants }: PokerScreenProps) {
   const { user } = useAuth();
   const { currentTheme } = useTheme();
+  const { 
+    submitVote, 
+    revealCards, 
+    startTimer, 
+    pauseTimer, 
+    stopTimer, 
+    startVoting 
+  } = useRoom();
   const isHost = room.hostUserId === user?.id;
 
   const currentUserParticipant = participants.find(p => p.userId === user?.id);
@@ -33,38 +41,39 @@ export function PokerScreen({ room, participants }: PokerScreenProps) {
 
   const handleVote = (vote: string) => {
     if (user?.id) {
-      socketService.submitVote(room.id, user.id, vote);
+      submitVote(vote);
     }
   };
 
   const handleReveal = () => {
-    socketService.revealVotes(room.id);
-  };
-
-  const handleReset = () => {
-    socketService.resetGame(room.id);
+    revealCards();
   };
 
   const handleTimerAction = (action: 'start' | 'pause' | 'stop') => {
     if (action === 'start') {
-      socketService.startTimer(room.id, room.settings?.timerDuration || 60);
+      startTimer(room.settings?.timerDuration || 60);
     } else if (action === 'pause') {
-      socketService.pauseTimer(room.id);
+      pauseTimer();
     } else {
-      socketService.stopTimer(room.id);
+      stopTimer();
     }
   };
 
   const handleTimerExpire = () => {
     console.log('[PokerScreen] Timer expired, revealing votes...');
     if (isHost && room.gameState === 'VOTING') {
-      socketService.revealVotes(room.id);
+      revealCards();
     }
   };
 
   const handleStartVoting = () => {
-    socketService.startVoting(room.id);
+    startVoting();
   };
+
+  // If game is revealed, show the dedicated Results Screen
+  if (room.gameState === 'REVEALED') {
+    return <ResultsScreen room={room} participants={participants} />;
+  }
 
   return (
     <LinearGradient
@@ -84,9 +93,9 @@ export function PokerScreen({ room, participants }: PokerScreenProps) {
             end={{ x: 1, y: 1 }}
           >
             <Text style={styles.storyTitle}>
-              {room.gameState === 'REVEALED' ? '✨ Voting Finished' : 
-               room.gameState === 'LOBBY' ? '🎯 Waiting to Start' : '⏳ Voting in Progress'}
+              {room.gameState === 'LOBBY' ? '🎯 Waiting to Start' : '⏳ Voting in Progress'}
             </Text>
+            
             {room.timer && room.timer.startTime && (
               <Timer 
                 startTime={room.timer.startTime} 
@@ -105,7 +114,7 @@ export function PokerScreen({ room, participants }: PokerScreenProps) {
               <ParticipantBadge 
                 key={p.userId} 
                 participant={p} 
-                revealed={room.gameState === 'REVEALED'}
+                revealed={false}
                 currentTheme={currentTheme}
               />
             ))}
@@ -115,47 +124,35 @@ export function PokerScreen({ room, participants }: PokerScreenProps) {
 
       {/* Controls */}
       <View style={styles.controls}>
-        {room.gameState === 'REVEALED' ? (
-          <View style={styles.resultsArea}>
-            <Text style={styles.resultTitle}>
-              📊 Results
-            </Text>
-            <ResultsChart participants={participants} deckType={room.deckType} />
-            {isHost && (
-              <Button title="Start New Vote" onPress={handleReset} />
-            )}
-          </View>
+        {!isSpectator ? (
+          <CardDeck 
+            deckType={room.deckType} 
+            selectedValue={currentVote}
+            onSelect={handleVote}
+            themeColors={currentTheme.colors.button as any}
+          />
         ) : (
-          <>
-            {!isSpectator ? (
-              <CardDeck 
-                deckType={room.deckType} 
-                selectedValue={currentVote}
-                onSelect={handleVote}
-                themeColors={currentTheme.colors.button as any}
+          <View style={styles.spectatorMessage}>
+            <Text style={styles.spectatorText}>
+              👀 You are spectating
+            </Text>
+          </View>
+        )}
+
+        {isHost && (
+          <View style={styles.hostControls}>
+            {room.gameState === 'LOBBY' ? (
+              <Button 
+                title="Start Voting" 
+                onPress={handleStartVoting} 
+                style={styles.hostButton}
               />
             ) : (
-              <View style={styles.spectatorMessage}>
-                <Text style={styles.spectatorText}>
-                  👀 You are spectating
-                </Text>
-              </View>
-            )}
-
-            {isHost && (
-              <View style={styles.hostControls}>
-                {room.gameState === 'LOBBY' ? (
-                  <Button 
-                    title="Start Voting" 
-                    onPress={handleStartVoting} 
-                    style={styles.hostButton}
-                  />
-                ) : (
-                  <Button 
-                    title="Reveal Votes" 
-                    onPress={handleReveal} 
-                    variant="secondary"
-                    style={styles.hostButton}
+              <Button 
+                title="Reveal Votes" 
+                onPress={handleReveal} 
+                variant="secondary"
+                style={styles.hostButton}
                   />
                 )}
                 
@@ -169,8 +166,6 @@ export function PokerScreen({ room, participants }: PokerScreenProps) {
                 ) : null}
               </View>
             )}
-          </>
-        )}
       </View>
     </LinearGradient>
   );
@@ -347,14 +342,11 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
-  resultsArea: {
-    alignItems: 'center',
-    gap: 16,
+  hostControls: {
+    marginTop: 16,
+    gap: 12,
   },
-  resultTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#FFFFFF',
+  hostButton: {
     marginBottom: 8,
   },
   spectatorMessage: {
@@ -366,12 +358,5 @@ const styles = StyleSheet.create({
     color: '#A78BFA',
     fontStyle: 'italic',
     fontWeight: '600',
-  },
-  hostControls: {
-    marginTop: 16,
-    gap: 12,
-  },
-  hostButton: {
-    marginBottom: 8,
   },
 });

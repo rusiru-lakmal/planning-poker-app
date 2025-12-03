@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/contexts/ThemeContext';
-import roomsAPI from '@/services/rooms.api';
+import { useRoom } from '@/contexts/RoomContext';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
@@ -27,6 +27,7 @@ export const RoomSettingsModal: React.FC<RoomSettingsModalProps> = ({
   roomId,
 }) => {
   const { currentTheme } = useTheme();
+  const { currentRoom } = useRoom();
   const [settings, setSettings] = useState(initialSettings);
 
   React.useEffect(() => {
@@ -34,24 +35,13 @@ export const RoomSettingsModal: React.FC<RoomSettingsModalProps> = ({
     if (visible) {
       setSettings(initialSettings);
       
-      const fetchFreshSettings = async () => {
-        try {
-          console.log("[RoomSettingsModal] Fetching fresh settings for room:", roomId);
-          const room = await roomsAPI.getRoomById(roomId + '?t=' + Date.now());
-          if (room && room.settings) {
-            console.log("[RoomSettingsModal] Got fresh settings:", room.settings);
-            setSettings(room.settings);
-          }
-        } catch (error) {
-          console.error("[RoomSettingsModal] Failed to fetch fresh settings:", error);
-        }
-      };
-      
-      if (roomId) {
-        fetchFreshSettings();
+      // Use currentRoom from context if available and matches roomId
+      if (currentRoom && currentRoom.id === roomId && currentRoom.settings) {
+        console.log("[RoomSettingsModal] Using settings from currentRoom context:", currentRoom.settings);
+        setSettings(currentRoom.settings);
       }
     }
-  }, [visible, roomId]);
+  }, [visible, roomId, currentRoom]);
 
   const handleSave = () => {
     console.log("[RoomSettingsModal] handleSave called with settings:", settings);
